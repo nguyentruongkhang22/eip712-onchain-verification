@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { signTypedData, SignTypedDataVersion, TypedMessage } from "@metamask/eth-sig-util";
 
 import { EIP712NestedStructure, EIP712NestedStructure__factory } from "../typechain-types";
 import { signWhitelist } from "./utils/signWhitelist";

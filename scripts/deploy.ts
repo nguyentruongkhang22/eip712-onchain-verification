@@ -1,18 +1,32 @@
 import { ethers } from "hardhat";
+import { EIP712NestedStructure } from "../typechain-types";
+import { signWhitelist } from "../test/utils/signWhitelist";
 
 async function main() {
-  // const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  // const unlockTime = currentTimestampInSeconds + 60;
-  // const lockedAmount = ethers.parseEther("0.001");
-  // const lock = await ethers.deployContract("Lock", [unlockTime], {
-  //   value: lockedAmount,
-  // });
-  // await lock.waitForDeployment();
-  // console.log(
-  //   `Lock with ${ethers.formatEther(
-  //     lockedAmount
-  //   )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
-  // );
+  const [account] = await ethers.getSigners();
+  const factory = await ethers.getContractFactory("EIP712NestedStructure");
+
+  const eip712 = await factory.deploy({ gasLimit: 4700000 });
+  await eip712.waitForDeployment();
+
+  console.log("EIP712NestedStructure deployed to:", eip712.target);
+  const contract = await ethers.getContractAt("EIP712NestedStructure", eip712.target);
+  const chainId = Number(await contract.getChainId());
+  const verifyingContract = await eip712.getAddress();
+
+  const mail: EIP712NestedStructure.MailWithSubjectStruct = {
+    to: account.address,
+    content: {
+      subject: "test subj",
+      message: "mail message"
+    }
+  };
+  const wallet = ethers.Wallet.createRandom();
+  const signature = await signWhitelist(wallet, mail, chainId, verifyingContract);
+  const recoveredSigner = await eip712.verify(signature, wallet.address, mail);
+
+  const isValid = recoveredSigner === wallet.address;
+  console.log(" -- isValid: ", isValid);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
